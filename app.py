@@ -12,7 +12,6 @@ from flask_googlemaps import Map
 load_dotenv()
  
 app = Flask(__name__)
-GoogleMaps(app, key=" <YOUR GOOGLE MAPS API KEY>")
 client = Client()
  
 sky_pics = {}
@@ -34,10 +33,10 @@ def reply():
         pic_url = request.form.get('MediaUrl0')  # URL of the person's media
         relevant_tags = get_tags(pic_url)
         print("The tags for your picture are : ", relevant_tags)
-        if 'sky' or ‘weather’ in relevant_tags and sky_pics.get(sender)[4] is None:
+        if 'sky' or 'weather' in relevant_tags and sky_pics.get(sender)[4] is None:
             sky_pics.get(sender)[4] = pic_url
             return respond(f'Thanks for sending in a picture.')
-        if 'sky' or ‘weather’ in relevant_tags and sky_pics.get(sender)[4] is not None:
+        if 'sky' or 'weather' in relevant_tags and sky_pics.get(sender)[4] is not None:
             # replace the picture URL in sky_pics dictionary
             sky_pics.get(sender)[4] = pic_url
             return respond(f'Your picture has been updated.')
