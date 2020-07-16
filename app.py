@@ -4,14 +4,15 @@ from flask import Flask, request, render_template
 from twilio.twiml.messaging_response import MessagingResponse
 from pprint import pprint   # makes payload look nicer to read
 from twilio.rest import Client
-from image_classifer import get_tags
-from geocoder import get_location
 from flask_googlemaps import GoogleMaps
 from flask_googlemaps import Map
+from geocoder import get_location
+from image_classifier import get_tags
 
 load_dotenv()
  
 app = Flask(__name__)
+GoogleMaps(app, key="<YOUR GOOGLE API KEY")
 client = Client()
  
 sky_pics = {}
@@ -35,10 +36,12 @@ def reply():
         print("The tags for your picture are : ", relevant_tags)
         if 'sky' or 'weather' in relevant_tags and sky_pics.get(sender)[4] is None:
             sky_pics.get(sender)[4] = pic_url
+            print("[INFO] : sender has set their pic " , sky_pics.get(sender))
             return respond(f'Thanks for sending in a picture.')
         if 'sky' or 'weather' in relevant_tags and sky_pics.get(sender)[4] is not None:
             # replace the picture URL in sky_pics dictionary
             sky_pics.get(sender)[4] = pic_url
+            print("[INFO] : sender has updated their pic " , sky_pics.get(sender))
             return respond(f'Your picture has been updated.')
         else:
             return respond(f'Please send in a picture of the sky.')
@@ -53,21 +56,19 @@ def reply():
     else:
         return respond(f'Please send your current location, then send a picture of the sky.')
 
+
 @app.route("/")
 def mapview():
     for entry in sky_pics:
         if sky_pics.get(entry)[4] is None:
-            url_entry_pic = 'https://s3-external-1.amazonaws.com/media.twiliocdn.com/ACa2dea70cb125daf20c4ac433be77eda4/d7a07ccac2cf9321e82559c82beff7ed'       #rando pics
+            url_entry_pic = 'https://s3-external-1.amazonaws.com/media.twiliocdn.com/ACa2dea70cb125daf20c4ac433be77eda4/d7a07ccac2cf9321e82559c82beff7ed'       # random filler pic
             sky_pics.get(entry)[4] = url_entry_pic
         markers.append({
             'icon': 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
             'lat': sky_pics.get(entry)[0], 
             'lng': sky_pics.get(entry)[1],
             'infobox': '<div id="bodyContent">' +
-                '<img src="' +
-                sky_pics.get(entry)[4] + 
-                '" alt = "sky" style="width:175px;height:220px;"></img>' +
-                '</div>' 
+                '<img src="' + sky_pics.get(entry)[4] + '" alt = "sky" style="width:175px;height:220px;"></img>' + '</div>' 
         })
     mymap = Map(
         identifier="sndmap",
@@ -79,22 +80,9 @@ def mapview():
             "z-index:200;"
             "zoom: -9999999;"
         ),
-        # these coordinates re-center the map 
+        # these coordinates re-center the map
         lat=37.805355,
         lng=-122.322618,
         markers = markers,
     )
-    
     return render_template('index.html', mymap=mymap)
-
-def start_ngrok():
-    from twilio.rest import Client
-    from pyngrok import ngrok
-    url = ngrok.connect(5000)
-    print(' * Tunnel URL:', url)
-    client = Client()
- 
-if __name__ == '__main__':
-    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-        start_ngrok()
-    app.run(debug=True)
